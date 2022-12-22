@@ -4,7 +4,6 @@ const UnauthorizedError = require('../errors/UnauthorizedError');
 
 // Схемы электронной почты и URL.
 const emailRegex = /^([\w]+@([\w-]+\.)+[\w-]{2,4})?$/;
-const urlRegex = /^https?:\/\/(www\.)?[a-zA-Z\0-9]+\.[\w\-._~:/?#[\]@!$&'()*+,;=]{2,}#?$/;
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -47,7 +46,4 @@ userSchema.statics.findUserByCredentials = function findUserByCredentials(email,
     });
 };
 
-module.exports = {
-  User: mongoose.model('user', userSchema),
-  urlRegex,
-};
+module.exports = mongoose.model('user', userSchema);

@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/users');
+const User = require('../models/users');
 const ServerError = require('../errors/ServerError');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
@@ -28,44 +28,20 @@ module.exports.login = (req, res, next) => {
     });
 };
 
-// Получаем всех пользователей.
-module.exports.getUsers = (req, res, next) => {
-  User.find({})
-    .then((users) => res.send({ data: users }))
-    .catch((err) => next(new ServerError(err.message)));
-};
-
 // Получаем пользователя по id.
 module.exports.getCurrentUser = (req, res, next) => {
   User.findById(req.user._id)
-    .then((user) => {
-      if (user) {
-        res.send({ data: user });
+    .then((document) => {
+      if (document) {
+        const user = document.toObject();
+        delete user._id;
+        res.send({ user });
       } else {
         next(new NotFoundError('Пользователь не найден.'));
       }
     })
     .catch((err) => {
       next(new ServerError(err.message));
-    });
-};
-
-// Получаем пользователя по id.
-module.exports.getUserById = (req, res, next) => {
-  User.findById(req.params.userId)
-    .then((user) => {
-      if (user) {
-        res.send({ data: user });
-      } else {
-        next(new NotFoundError('Пользователь не найден.'));
-      }
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Переданы некорректные данные'));
-      } else {
-        next(new ServerError(err.message));
-      }
     });
 };
 
@@ -103,38 +79,17 @@ module.exports.createUser = (req, res, next) => {
 // Обновляем профиль пользователя.
 module.exports.updateUser = (req, res, next) => {
   // Получаем данные из req.body.
-  const { name, about } = req.body;
+  const { email, name } = req.body;
   const userId = req.user._id;
   // Создаем запись в БД и обрабатываем ошибку.
-  User.findByIdAndUpdate(userId, { name, about }, { new: true })
-    .then((user) => {
-      if (user) {
+  User.findByIdAndUpdate(userId, { email, name }, { new: true })
+    .then((document) => {
+      if (document) {
+        const user = document.toObject();
+        delete user._id;
         res.send({ data: user });
       } else {
         next(new NotFoundError('Пользователь не найден данные.'));
-      }
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Переданы некорректные данные.'));
-      } else {
-        next(new ServerError(err.message));
-      }
-    });
-};
-
-// Обновляем аватар пользователя.
-module.exports.updateUserAvatar = (req, res, next) => {
-  // Получаем данные из req.body.
-  const { avatar } = req.body;
-  const userId = req.user._id;
-  // Создаем запись в БД и обрабатываем ошибку.
-  User.findByIdAndUpdate(userId, { avatar }, { new: true })
-    .then((user) => {
-      if (user) {
-        res.send({ data: user });
-      } else {
-        next(new NotFoundError('Пользователь не найден аватар.'));
       }
     })
     .catch((err) => {

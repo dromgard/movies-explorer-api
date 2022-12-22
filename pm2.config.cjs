@@ -3,7 +3,7 @@
 module.exports = {
   apps: [
     {
-      name: 'project-backend',
+      name: 'diploma-backend',
       script: 'app.js',
       env: {
         'NODE_ENV': 'production',
