@@ -5,8 +5,8 @@ module.exports.celebrateCreateMovie = celebrate({
   body: Joi.object().keys({
     country: Joi.string().required(),
     director: Joi.string().required(),
-    duration: Joi.string().required(),
-    year: Joi.number().required(),
+    duration: Joi.number().required(),
+    year: Joi.string().required(),
     description: Joi.string().required(),
     image: Joi.string().regex(urlRegex).uri({ scheme: ['http', 'https'] }).required(),
     trailerLink: Joi.string().regex(urlRegex).uri({ scheme: ['http', 'https'] }).required(),

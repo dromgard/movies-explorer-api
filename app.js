@@ -5,6 +5,7 @@ const { errors } = require('celebrate');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const helmet = require('helmet');
 
 // Получаем данные функций обработчиков запросов из "/controllers".
 const { login, createUser } = require('./controllers/users');
@@ -16,15 +17,16 @@ const { celebrateCreateUser, celebrateLoginUser } = require('./validators/users'
 
 const NotFoundError = require('./errors/NotFoundError');
 
-// Получаем логгеры.
+// Получаем логгеры и rate-limit.
 const { requestLogger, errorLogger } = require('./middlewares/logger');
+const rateLimiter = require('./middlewares/rateLimit');
 
-const { PORT = 3001 } = process.env;
+const { PORT = 3001, dbName = 'mongodb://localhost:27017/moviesdb' } = process.env;
 
 const app = express();
 
 mongoose.set({ runValidators: true });
-mongoose.connect('mongodb://localhost:27017/bitfilmsdb');
+mongoose.connect(dbName);
 
 // Обработка res.body в json.
 app.use(bodyParser.json());
@@ -48,6 +50,12 @@ app.set('config', config);
 
 // Подключаем логгер запросов для всех роутов.
 app.use(requestLogger);
+
+// Подключаем helmet для защиты приложения от некоторых широко известных веб-уязвимостей.
+app.use(helmet());
+
+// Подключаем rate-limit для ограничения количества запросов.
+app.use(rateLimiter);
 
 // Краштест для ревью.
 app.get('/crash-test', () => {

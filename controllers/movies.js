@@ -7,7 +7,8 @@ const HTTPError = require('../errors/HTTPError');
 
 // Возвращаем все сохранённые текущим пользователем фильмы.
 module.exports.getMovies = (req, res, next) => {
-  Movie.find({})
+  const owner = req.user._id;
+  Movie.find({ owner })
     .then((movies) => res.send({ data: movies }))
     .catch((err) => next(new ServerError(err.message)));
 };
@@ -15,35 +16,7 @@ module.exports.getMovies = (req, res, next) => {
 // Создаём фильм.
 module.exports.createMovie = (req, res, next) => {
   // Получаем данные из req.body.
-  const owner = req.user._id;
-  const {
-    country,
-    director,
-    duration,
-    year,
-    description,
-    image,
-    trailerLink,
-    thumbnail,
-    movieId,
-    nameRU,
-    nameEN,
-  } = req.body;
-
-  Movie.create({
-    country,
-    director,
-    duration,
-    year,
-    description,
-    image,
-    trailerLink,
-    thumbnail,
-    owner,
-    movieId,
-    nameRU,
-    nameEN,
-  })
+  Movie.create({ ...req.body, owner: req.user._id })
     .then((movie) => res.send({ data: movie }))
     .catch((err) => {
       if (err.name === 'ValidationError') {

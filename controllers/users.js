@@ -81,22 +81,30 @@ module.exports.updateUser = (req, res, next) => {
   // Получаем данные из req.body.
   const { email, name } = req.body;
   const userId = req.user._id;
-  // Создаем запись в БД и обрабатываем ошибку.
-  User.findByIdAndUpdate(userId, { email, name }, { new: true })
-    .then((document) => {
-      if (document) {
-        const user = document.toObject();
-        delete user._id;
-        res.send({ data: user });
+  // Проверяем на дубль почты.
+  User.findOne({ email })
+    .then((data) => {
+      if (data) {
+        next(new ConflictError('Пользователь с такой почтой уже существует'));
       } else {
-        next(new NotFoundError('Пользователь не найден данные.'));
-      }
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Переданы некорректные данные.'));
-      } else {
-        next(new ServerError(err.message));
+        // Создаем запись в БД и обрабатываем ошибку.
+        User.findByIdAndUpdate(userId, { email, name }, { new: true })
+          .then((document) => {
+            if (document) {
+              const user = document.toObject();
+              delete user._id;
+              res.send({ data: user });
+            } else {
+              next(new NotFoundError('Пользователь не найден.'));
+            }
+          })
+          .catch((err) => {
+            if (err.name === 'ValidationError') {
+              next(new BadRequestError('Переданы некорректные данные.'));
+            } else {
+              next(new ServerError(err.message));
+            }
+          });
       }
     });
 };
