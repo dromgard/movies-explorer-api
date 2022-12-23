@@ -48,8 +48,8 @@ const movieSchema = new mongoose.Schema({
     },
   },
   owner: {
-    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    default: [],
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'user',
     required: true,
   },
   movieId: {

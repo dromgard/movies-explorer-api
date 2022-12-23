@@ -17,9 +17,10 @@ const { celebrateCreateUser, celebrateLoginUser } = require('./validators/users'
 
 const NotFoundError = require('./errors/NotFoundError');
 
-// Получаем логгеры и rate-limit.
+// Получаем логгеры, rate-limit и централизованный обрабочик ошибок.
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const rateLimiter = require('./middlewares/rateLimit');
+const errorHandler = require('./middlewares/errorHandler');
 
 const { PORT = 3001, dbName = 'mongodb://localhost:27017/moviesdb' } = process.env;
 
@@ -88,10 +89,7 @@ app.use(errorLogger);
 app.use(errors());
 
 // Централизованный обработчик ошибок.
-app.use((err, req, res, next) => {
-  res.status(err.statusCode || 500).send({ message: err.message });
-  next();
-});
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   // Если всё работает, консоль покажет, какой порт приложение слушает
