@@ -78,33 +78,34 @@ module.exports.createUser = (req, res, next) => {
 
 // Обновляем профиль пользователя.
 module.exports.updateUser = (req, res, next) => {
-  // Получаем данные из req.body.
-  const { email, name } = req.body;
-  const userId = req.user._id;
-  // Проверяем на дубль почты.
-  User.findOne({ email })
-    .then((data) => {
-      if (data) {
-        next(new ConflictError('Пользователь с такой почтой уже существует'));
+  const query = User.find().or({ _id: req.user._id });
+  if (req.body.email) {
+    query.or({ email: req.body.email });
+  }
+
+  query
+    .then((users) => {
+      if (users.length === 0) {
+        throw (new NotFoundError('Пользователь не найден.'));
+      } else if (users.length > 1) {
+        throw (new ConflictError('Пользователь с такой почтой уже существует'));
       } else {
-        // Создаем запись в БД и обрабатываем ошибку.
-        User.findByIdAndUpdate(userId, { email, name }, { new: true })
-          .then((document) => {
-            if (document) {
-              const user = document.toObject();
-              delete user._id;
-              res.send({ data: user });
-            } else {
-              next(new NotFoundError('Пользователь не найден.'));
-            }
-          })
-          .catch((err) => {
-            if (err.name === 'ValidationError') {
-              next(new BadRequestError('Переданы некорректные данные.'));
-            } else {
-              next(new ServerError(err.message));
-            }
-          });
+        const [userDoc] = users;
+        const user = {
+          ...userDoc.toObject(),
+          ...req.body,
+        };
+        return userDoc.updateOne(req.body).then(() => user);
+      }
+    })
+    .then((updateUser) => {
+      res.send({ data: updateUser });
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные.'));
+      } else {
+        next(err);
       }
     });
 };
